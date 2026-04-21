@@ -8,57 +8,25 @@
 import Testing
 import Storage
 
-class Person {
-    let name: String
-    weak var apartment: Apartment?
-    
-    init(name: String) {
-        self.name = name
-        print("\(name) is initialized")
-    }
-    
-    // This will never print because of the leak!
-    deinit {
-        print("\(name) is being deinitialized")
-    }
-}
-
-class Apartment {
-    let unit: String
-    var tenant: Person?
-    
-    init(unit: String) {
-        self.unit = unit
-        print("Apartment \(unit) is initialized")
-    }
-    
-    // This will never print because of the leak!
-    deinit {
-        print("Apartment \(unit) is being deinitialized")
-    }
-}
-
 @Suite("Expense Repository Tests")
+@MainActor
 struct ExpenseRepositoryTests {
     @Test("Load delivers no expenses on an empty database")
     func load_deliversEmptyOnEmptyDatabase() async throws {
-        makeSUT({ person, apartment in
+        try await makeSUT(action: { repository in
+            // Your assertions will go here!
         })
     }
     
-    
-    private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation, _ completion: (Person, Apartment) -> Void) {
-        withMemoryLeakTracking(sourceLocation: sourceLocation, testBody: { tracker in
-            let john: Person = Person(name: "John Appleseed")
-            let unit4A: Apartment = Apartment(unit: "4A")
+    private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation, 
+                         action: (ExpenseRepository) async throws -> Void) async throws {
+        
+        try await withMemoryLeakTracking(sourceLocation: sourceLocation, testBody: { tracker in
+            let sut = ExpenseRepository()
             
-            john.apartment = unit4A
-            unit4A.tenant = john
+            tracker(sut)
             
-            tracker(john)
-            tracker(unit4A)
-            
-            completion(john, unit4A)
+            try await action(sut)
         })
     }
 }
