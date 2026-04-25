@@ -48,26 +48,26 @@ struct ExpenseSwiftDataStoreTests {
         })
     }
     
-    /*
-    @Test("Insert delivers error on insertion failure")
-    func insert_deliversErrorOnInsertionFailure() async throws {
-        // 1. Arrange: Create two expenses with the EXACT same ID
+    @Test("Insert updates existing record on duplicate ID")
+    func insert_updatesExistingRecord_onDuplicate() async throws {
+        // Arrange
         let sharedId = UUID()
         let firstExpense = LocalExpense(id: sharedId, amount: 10, date: Date(), note: "First")
         let duplicateExpense = LocalExpense(id: sharedId, amount: 20, date: Date(), note: "Duplicate")
         
         try await makeSUT(action: { store in
-            // 2. Act & Assert
-            // The first insert succeeds
             try await store.insert(expense: firstExpense)
             
-            // The second insert violates the @Attribute(.unique) rule, so it MUST throw an error
-            await #expect(throws: Error.self) {
-                try await store.insert(expense: duplicateExpense)
-            }
+            // Act
+            try await store.insert(expense: duplicateExpense)
+            
+            //  Assert
+            let expenses = try await store.fetch()
+            #expect(expenses.count == 1, "Expected only 1 expense after upsert")
+            #expect(expenses.first?.amount == 20, "Expected amount to be updated")
+            #expect(expenses.first?.note == "Duplicate", "Expected note to be updated")
         })
     }
-     */
     
     // MARK: - Helpers
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
