@@ -36,6 +36,19 @@ struct SaveExpenseTests {
         })
     }
     
+    @Test("Rejects save request when amount is negative")
+    func save_rejectsNegativeAmount() async throws {
+        // Arrange
+        let invalidExpense = LocalExpense(id: UUID(), amount: -10.0, date: Date(), note: "Invalid")
+        
+        try await makeSUT(action: { store in
+            // Act & Assert
+            await #expect(throws: SwiftDataStore.InsertionError.negativeAmount) {
+                try await store.insert(expense: invalidExpense)
+            }
+        })
+    }
+    
     // MARK: - Helpers
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
                          action: @MainActor (SwiftDataStore) async throws -> Void) async throws {

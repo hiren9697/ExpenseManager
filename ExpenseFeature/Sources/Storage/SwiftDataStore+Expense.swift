@@ -10,7 +10,15 @@ import SwiftData
 import Domain
 
 extension SwiftDataStore {
+    public enum InsertionError: Error {
+        case negativeAmount
+    }
+    
     public func insert(expense: LocalExpense) async throws {
+        if expense.amount < 0 {
+            throw InsertionError.negativeAmount
+        }
+        
         // 1. Create a scratchpad tied to your container
         let context = ModelContext(container)
         
