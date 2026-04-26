@@ -5,6 +5,7 @@
 //  Created by Hirenkumar Fadadu on 22/04/26.
 //
 
+import Foundation
 import SwiftData
 import Domain
 
@@ -30,7 +31,8 @@ extension SwiftDataStore {
         let context = ModelContext(container)
         
         // FetchDescriptor is the query instructions (equivalent to NSFetchRequest)
-        let descriptor = FetchDescriptor<ManagedExpense>()
+        var descriptor = FetchDescriptor<ManagedExpense>()
+        descriptor.sortBy = [SortDescriptor(\.date, order: .reverse)]
         
         let managedExpenses = try context.fetch(descriptor)
         

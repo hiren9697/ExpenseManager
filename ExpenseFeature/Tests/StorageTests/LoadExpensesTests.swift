@@ -28,9 +28,9 @@ struct LoadExpenseTests {
     
     @Test("Load delivers expenses on a non-empty database")
     func load_deliversExpenses_onNonEmptyDatabase() async throws {
-        // Arrange
-        let firstExpense = LocalExpense(id: UUID(), amount: 1, date: Date(), note: nil)
-        let secondExpense = LocalExpense(id: UUID(), amount: 2, date: Date(), note: "Second expense note")
+        let today = Date()
+        let firstExpense = uniqueExpense(date: today.adding(seconds: 1)) // Most recent
+        let secondExpense = uniqueExpense(amount: 2, date: today, note: "Second expense note") // Older
         try await makeSUT(action: { store in
             // Act
             try await store.insert(expense: firstExpense)
@@ -48,6 +48,28 @@ struct LoadExpenseTests {
         })
     }
     
+    @Test("Load delivers expenses sorted by date (most recent first)")
+    func load_deliversExpenses_sortedByDate() async throws {
+        // Arrange
+        let today = Date()
+        let olderExpense = uniqueExpense(date: today.adding(days: -1), note: "older")
+        let middleExpense = uniqueExpense(date: today, note: "middle")
+        let newestExpense = uniqueExpense(date: today.adding(days: 1), note: "newest")
+        
+        try await makeSUT(action: { store in
+            // Act
+            // Insert in a random order
+            try await store.insert(expense: middleExpense)
+            try await store.insert(expense: newestExpense)
+            try await store.insert(expense: olderExpense)
+            
+            let fetchedExpenses = try await store.fetch()
+            
+            // Assert
+            compare(input: [newestExpense, middleExpense, olderExpense], fetched: fetchedExpenses)
+        })
+    }
+    
     // MARK: - Helpers
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
                          action: @MainActor (SwiftDataStore) async throws -> Void) async throws {
@@ -60,6 +82,10 @@ struct LoadExpenseTests {
             
             try await action(sut)
         })
+    }
+    
+    private func uniqueExpense(amount: Double = 1.0, date: Date = Date(), note: String? = nil) -> LocalExpense {
+        LocalExpense(id: UUID(), amount: amount, date: date, note: note)
     }
     
     private func compare(input: [LocalExpense], fetched: [LocalExpense], sourceLocation: SourceLocation = #_sourceLocation) {
@@ -76,5 +102,15 @@ struct LoadExpenseTests {
         #expect(input.amount == fetched.amount, sourceLocation: sourceLocation)
         #expect(input.date == fetched.date, sourceLocation: sourceLocation)
         #expect(input.note == fetched.note, sourceLocation: sourceLocation)
+    }
+}
+
+private extension Date {
+    func adding(days: Int) -> Date {
+        Calendar(identifier: .gregorian).date(byAdding: .day, value: days, to: self)!
+    }
+    
+    func adding(seconds: TimeInterval) -> Date {
+        self + seconds
     }
 }
