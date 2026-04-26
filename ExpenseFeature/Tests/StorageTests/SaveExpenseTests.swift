@@ -2,7 +2,7 @@
 //  File.swift
 //  ExpenseFeature
 //
-//  Created by Hirenkumar Fadadu on 22/04/26.
+//  Created by Hirenkumar Fadadu on 26/04/26.
 //
 
 import Foundation
@@ -13,40 +13,7 @@ import Domain
 
 @Suite("Expense Repository Tests")
 @MainActor
-struct ExpenseSwiftDataStoreTests {
-    
-    @Test("Load delivers no expenses on an empty database")
-    func load_deliversEmpty_onEmptyDatabase() async throws {
-        // Arrange
-        try await makeSUT(action: { store in
-            // Act
-            let expenses = try await store.fetch()
-            // Assert
-            #expect(expenses.isEmpty)
-        })
-    }
-    
-    @Test("Load delivers expenses on a non-empty database")
-    func load_deliversExpenses_onNonEmptyDatabase() async throws {
-        // Arrange
-        let firstExpense = LocalExpense(id: UUID(), amount: 1, date: Date(), note: nil)
-        let secondExpense = LocalExpense(id: UUID(), amount: 2, date: Date(), note: "Second expense note")
-        try await makeSUT(action: { store in
-            // Act
-            try await store.insert(expense: firstExpense)
-            let firstFetchAttempExpenses = try await store.fetch()
-            
-            // Assert
-            compare(input: [firstExpense], fetched: firstFetchAttempExpenses)
-            
-            // Act
-            try await store.insert(expense: secondExpense)
-            let secondFetchAttempExpenses = try await store.fetch()
-            
-            // Assert
-            compare(input: [firstExpense, secondExpense], fetched: secondFetchAttempExpenses)
-        })
-    }
+struct SaveExpenseTests {
     
     @Test("Insert updates existing record on duplicate ID")
     func insert_updatesExistingRecord_onDuplicate() async throws {
@@ -99,5 +66,3 @@ struct ExpenseSwiftDataStoreTests {
         #expect(input.note == fetched.note, sourceLocation: sourceLocation)
     }
 }
-
-
