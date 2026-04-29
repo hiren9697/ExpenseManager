@@ -27,12 +27,12 @@ let package = Package(
             dependencies: [
                 "ExpenseFeature"
             ],
-            path: "Sources/Storage"
+            path: "Sources"
         ),
         .testTarget(
             name: "SwiftDataStorageTests",
             dependencies: ["SwiftDataStorage"],
-            path: "Tests/StorageTests"
+            path: "Tests"
         ),
     ],
     swiftLanguageModes: [.v6]
