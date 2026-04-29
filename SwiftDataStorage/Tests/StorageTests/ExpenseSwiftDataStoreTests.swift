@@ -9,10 +9,9 @@ import Foundation
 import Testing
 import SwiftData
 import Domain
-@testable import Storage
+@testable import SwiftDataStorage
 
 @Suite("Expense Swift Data Store Tests")
-@MainActor
 struct ExpenseSwiftDataStoreTests {
     
     @Test("Load delivers no expenses on an empty database")

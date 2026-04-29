@@ -19,7 +19,7 @@ let package = Package(
         // 1. The Composition layer (depends on internal layers)
         .target(
             name: "ExpenseFeature",
-            dependencies: ["Domain", "Storage"]
+            dependencies: ["Domain"]
         ),
         .testTarget(
             name: "ExpenseFeatureTests",
@@ -31,15 +31,6 @@ let package = Package(
             name: "Domain",
         ),
         
-        // 3. The Infrastructure (depends on Core)
-        .target(
-            name: "Storage",
-            dependencies: ["Domain"]
-        ),
-        .testTarget(
-            name: "StorageTests",
-            dependencies: ["Storage"]
-        ),
     ],
     swiftLanguageModes: [.v6]
 )
