@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Expense: Equatable {
+public struct Expense: Equatable, Sendable {
     public let id: UUID
     public let amount: Double
     public let date: Date
