@@ -19,18 +19,11 @@ let package = Package(
         // 1. The Composition layer (depends on internal layers)
         .target(
             name: "ExpenseFeature",
-            dependencies: ["Domain"]
         ),
         .testTarget(
             name: "ExpenseFeatureTests",
             dependencies: ["ExpenseFeature"]
         ),
-        
-        // 2. The Core
-        .target(
-            name: "Domain",
-        ),
-        
     ],
     swiftLanguageModes: [.v6]
 )
