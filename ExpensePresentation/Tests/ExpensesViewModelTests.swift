@@ -10,20 +10,32 @@ import ExpenseFeature
 import ExpensePresentation
 import Testing
 
+@Suite(.timeLimit(.minutes(1)))
+@MainActor
 final class ExpensesViewModelTests {
-    @Test @MainActor func test_fetch_requests_expenses() async {
+    /*
+    @Test 
+    func test_fetch_requests_expenses() async throws {
+        // Arrange
+        try await makeSUT(action: { sut, spy in
+         // Act
+            let _ = await sut.fetch()
+        
+        // Assert   
+            
+        })
     }
+     */
     
     @MainActor
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
-                         action: (ExpensesViewModel, Spy) -> Void) {
-        withMemoryLeakTracking(sourceLocation: sourceLocation, testBody: { tracker in
+                         action: (ExpensesViewModel, Spy) async throws -> Void) async throws {
+        try await withMemoryLeakTracking(sourceLocation: sourceLocation, testBody: { tracker in
             let spy = Spy()
             let sut = ExpensesViewModel(loadExpenses: spy.loadExpenses)   
-            tracker(spy)
-            tracker(sut)
+            await tracker(spy, sut)
             
-            action(sut, spy)
+            try await action(sut, spy)
         })
     }
     
