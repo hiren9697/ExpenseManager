@@ -16,14 +16,14 @@ final class ExpensesViewModelTests {
     
     @MainActor
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
-                         action: @MainActor (ExpensesViewModel, Spy) async throws -> Void) async throws {
-        try await withMainActorMemoryLeakTracking(sourceLocation: sourceLocation, testBody: { tracker in
+                         action: (ExpensesViewModel, Spy) -> Void) {
+        withMemoryLeakTracking(sourceLocation: sourceLocation, testBody: { tracker in
             let spy = Spy()
             let sut = ExpensesViewModel(loadExpenses: spy.loadExpenses)   
             tracker(spy)
             tracker(sut)
             
-            try await action(sut, spy)
+            action(sut, spy)
         })
     }
     
