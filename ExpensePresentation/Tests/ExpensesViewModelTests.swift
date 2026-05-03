@@ -114,6 +114,44 @@ final class ExpensesViewModelTests {
         })
     }
     
+    @Test
+    func fetch_setsExpenses_onSuccessResponse() async throws {
+            // Arrange
+        let firstResult = [Expense(id: UUID(), amount: 100, date: Date(), note: "Lunch")]
+        let firstResultViewModels = firstResult.map({ ExpenseViewModel(expense: $0) })
+        let thirdResult = [Expense(id: UUID(), amount: 500, date: Date(), note: "Medicines"),
+                           Expense(id: UUID(), amount: 200, date: Date(), note: "Taxi")]
+        let thirdResultViewModels = thirdResult.map({ ExpenseViewModel(expense: $0) })
+        try await makeSUT { sut, spy in
+            // Act
+            let fetchTask = Task { await sut.fetch() }
+            await Task.yield()
+            spy.completeExpensesLoading(with: firstResult, at: 0)
+            let _ = await fetchTask.value
+            
+            // Assert
+            #expect(sut.expenses == firstResultViewModels)
+
+            // Act
+            let secondFetchTask = Task { await sut.fetch() }
+            await Task.yield()
+            spy.completeExpensesLoadingWithError(anyNSError(), at: 1)
+            let _ = await secondFetchTask.value
+            
+            // Assert
+            #expect(sut.expenses == nil)
+            
+            // Act
+            let thirdFetchTask = Task { await sut.fetch() }
+            await Task.yield()
+            spy.completeExpensesLoading(with: thirdResult, at: 2)
+            let _ = await thirdFetchTask.value
+            
+            // Assert
+            #expect(sut.expenses == thirdResultViewModels)
+        }
+    }
+    
     @MainActor
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
                          action: (ExpensesViewModel, Spy) async throws -> Void) async throws {
