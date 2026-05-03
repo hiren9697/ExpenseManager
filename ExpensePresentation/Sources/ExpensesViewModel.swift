@@ -16,6 +16,7 @@ public final class ExpensesViewModel {
     }
     
     public func fetch() async {
+        error = nil
         isLoading = true
         defer {
             isLoading = false

@@ -78,6 +78,42 @@ final class ExpensesViewModelTests {
         })
     }
     
+    @Test
+    func fetch_setsError_onReceivingErrorFromLoader() async throws {
+        // Arrange
+        try await makeSUT(action: { sut, spy in
+            // Assert
+            #expect(sut.error == nil)
+            
+            // Act
+            let fetchTask = Task {
+                await sut.fetch()
+            }
+            await Task.yield()
+            spy.completeExpensesLoadingWithError(anyNSError(), at: 0)
+            let _ = await fetchTask.value
+            
+            // Assert
+            #expect(sut.error == ExpensesViewModel.fetchError)
+
+            // Act
+            let secondFetchTask = Task {
+                await sut.fetch()
+            }
+            await Task.yield()
+
+            // Assert
+            #expect(sut.error == nil)
+            
+            // Act
+            spy.completeExpensesLoadingWithError(anyNSError(), at: 1)
+            let _ = await secondFetchTask.value
+            
+            // Assert
+            #expect(sut.error == ExpensesViewModel.fetchError)
+        })
+    }
+    
     @MainActor
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
                          action: (ExpensesViewModel, Spy) async throws -> Void) async throws {
@@ -123,5 +159,9 @@ final class ExpensesViewModelTests {
         func completeExpensesLoadingWithError(_ error: Error, at index: Int = 0) {
             requests[index].continuation.finish(throwing: error)
         }
+    }
+
+    private func anyNSError() -> NSError {
+        return NSError(domain: "any error", code: 0)
     }
 }
