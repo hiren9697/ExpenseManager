@@ -23,14 +23,14 @@ private actor LeakTracker {
 
 func withMemoryLeakTracking(sourceLocation: SourceLocation = #_sourceLocation,
                             isolation: isolated (any Actor)? = #isolation,
-                            testBody: (_ trackForMemoryLeaks: @Sendable @escaping (AnyObject?...) async -> Void) async throws -> Void) async throws {
+                            testBody: (_ trackForMemoryLeaks: @Sendable @escaping (AnyObject?...) async -> Void) async -> Void) async {
     let tracker = LeakTracker()
     let track: @Sendable (AnyObject?...) async -> Void = { instances in
         let weakRefs = instances.map(WeakReference.init)
         await tracker.add(weakRefs)
     }
     
-    try await testBody(track)
+    await testBody(track)
     
     for weakReference in await tracker.references {
         #expect(weakReference.object == nil, "Potential memory leak.", sourceLocation: sourceLocation)

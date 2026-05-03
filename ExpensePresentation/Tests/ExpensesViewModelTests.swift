@@ -15,9 +15,9 @@ import Testing
 final class ExpensesViewModelTests {
     // MARK: - Tests
     @Test 
-    func fetch_requests_expenses() async throws {
+    func fetch_requests_expenses() async {
         // Arrange
-        try await makeSUT(action: { sut, spy in
+        await makeSUT(action: { sut, spy in
             // Act
             let firstFetchTask = Task {
                 await sut.fetch()
@@ -43,7 +43,7 @@ final class ExpensesViewModelTests {
     @Test
     func isLoadingstate_isEnabled_whileFetching() async throws {
         // Arrange
-        try await makeSUT(action: { sut, spy in
+        await makeSUT(action: { sut, spy in
             // Act
             let firstFetchTask = Task {
                 await sut.fetch()
@@ -81,7 +81,7 @@ final class ExpensesViewModelTests {
     @Test
     func fetch_setsError_onReceivingErrorFromLoader() async throws {
         // Arrange
-        try await makeSUT(action: { sut, spy in
+        await makeSUT(action: { sut, spy in
             // Assert
             #expect(sut.fetchError == nil)
             
@@ -122,7 +122,7 @@ final class ExpensesViewModelTests {
         let thirdResult = [Expense(id: UUID(), amount: 500, date: Date(), note: "Medicines"),
                            Expense(id: UUID(), amount: 200, date: Date(), note: "Taxi")]
         let thirdResultViewModels = thirdResult.map({ ExpenseViewModel(expense: $0) })
-        try await makeSUT { sut, spy in
+        await makeSUT { sut, spy in
             // Act
             let fetchTask = Task { await sut.fetch() }
             await Task.yield()
@@ -154,13 +154,13 @@ final class ExpensesViewModelTests {
     
     @MainActor
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
-                         action: (ExpensesViewModel, Spy) async throws -> Void) async throws {
-        try await withMemoryLeakTracking(sourceLocation: sourceLocation, testBody: { tracker in
+                         action: (ExpensesViewModel, Spy) async -> Void) async {
+        await withMemoryLeakTracking(sourceLocation: sourceLocation, testBody: { tracker in
             let spy = Spy()
             let sut = ExpensesViewModel(loadExpenses: spy.loadExpenses)   
             await tracker(spy, sut)
             
-            try await action(sut, spy)
+            await action(sut, spy)
         })
     }
     
