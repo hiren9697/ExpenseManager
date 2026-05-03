@@ -15,7 +15,7 @@ import Testing
 final class ExpensesViewModelTests {
     // MARK: - Tests
     @Test 
-    func test_fetch_requests_expenses() async throws {
+    func fetch_requests_expenses() async throws {
         // Arrange
         try await makeSUT(action: { sut, spy in
             // Act
