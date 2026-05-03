@@ -83,7 +83,7 @@ final class ExpensesViewModelTests {
         // Arrange
         try await makeSUT(action: { sut, spy in
             // Assert
-            #expect(sut.error == nil)
+            #expect(sut.fetchError == nil)
             
             // Act
             let fetchTask = Task {
@@ -94,7 +94,7 @@ final class ExpensesViewModelTests {
             let _ = await fetchTask.value
             
             // Assert
-            #expect(sut.error == ExpensesViewModel.fetchError)
+            #expect(sut.fetchError == ExpensesViewModel.fetchErrorMessage)
 
             // Act
             let secondFetchTask = Task {
@@ -103,14 +103,14 @@ final class ExpensesViewModelTests {
             await Task.yield()
 
             // Assert
-            #expect(sut.error == nil)
+            #expect(sut.fetchError == nil)
             
             // Act
             spy.completeExpensesLoadingWithError(anyNSError(), at: 1)
             let _ = await secondFetchTask.value
             
             // Assert
-            #expect(sut.error == ExpensesViewModel.fetchError)
+            #expect(sut.fetchError == ExpensesViewModel.fetchErrorMessage)
         })
     }
     

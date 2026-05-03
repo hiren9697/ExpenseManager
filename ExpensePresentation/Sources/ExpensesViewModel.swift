@@ -5,10 +5,10 @@ import ExpenseFeature
 @MainActor
 @Observable
 public final class ExpensesViewModel {
-    public static let fetchError = "Coudn't load expenses"
+    public static let fetchErrorMessage = "Coudn't load expenses"
     private let loadExpenses: LoadExpenses
     public var expenses: [ExpenseViewModel]?
-    public var error: String?
+    public var fetchError: String?
     public var isLoading: Bool = false
     
     public init(loadExpenses: @escaping LoadExpenses) {
@@ -16,7 +16,7 @@ public final class ExpensesViewModel {
     }
     
     public func fetch() async {
-        error = nil
+        fetchError = nil
         isLoading = true
         defer {
             isLoading = false
@@ -24,7 +24,7 @@ public final class ExpensesViewModel {
         do {
             expenses = try await loadExpenses().map({ ExpenseViewModel(expense: $0) })
         } catch {
-            self.error = Self.fetchError
+            self.fetchError = Self.fetchErrorMessage
             self.expenses = nil
         }
     }
