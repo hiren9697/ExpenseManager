@@ -13,19 +13,32 @@ import Testing
 @Suite(.timeLimit(.minutes(1)))
 @MainActor
 final class ExpensesViewModelTests {
-    /*
+    // MARK: - Tests
     @Test 
     func test_fetch_requests_expenses() async throws {
         // Arrange
         try await makeSUT(action: { sut, spy in
-         // Act
-            let _ = await sut.fetch()
-        
-        // Assert   
+            // Act
+            let firstFetchTask = Task {
+                await sut.fetch()
+            }
+            await Task.yield() 
+            spy.completeExpensesLoading(with: [], at: 0)
+            let _ = await firstFetchTask.value
             
+            // Assert   
+            #expect(spy.messages == [.loadExpenses])
+
+            // Act
+            let secondFetchTask = Task { await sut.fetch() }
+            await Task.yield()
+            spy.completeExpensesLoading(with: [], at: 1)
+            let _ = await secondFetchTask.value
+            
+            // Assert   
+            #expect(spy.messages == [.loadExpenses, .loadExpenses])
         })
     }
-     */
     
     @MainActor
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
@@ -47,22 +60,30 @@ final class ExpensesViewModelTests {
         }
         
         var messages: [Message] = []
-        private var loadCompleters: [CheckedContinuation<[Expense], Error>] = []
+        
+        private var requests: [(stream: AsyncThrowingStream<[Expense], Error>,
+                                continuation: AsyncThrowingStream<[Expense], Error>.Continuation)] = []
         
         func loadExpenses() async throws -> [Expense] {
             messages.append(.loadExpenses)
             
-            return try await withCheckedThrowingContinuation { continuation in
-                loadCompleters.append(continuation)
+            let (stream, continuation) = AsyncThrowingStream<[Expense], Error>.makeStream()
+            requests.append((stream, continuation))
+            
+            for try await result in stream {
+                return result
             }
+            
+            throw CancellationError()
         }
         
         func completeExpensesLoading(with expenses: [Expense] = [], at index: Int = 0) {
-            loadCompleters[index].resume(returning: expenses)
+            requests[index].continuation.yield(expenses)
+            requests[index].continuation.finish()
         }
         
         func completeExpensesLoadingWithError(_ error: Error, at index: Int = 0) {
-            loadCompleters[index].resume(throwing: error)
+            requests[index].continuation.finish(throwing: error)
         }
     }
 }
