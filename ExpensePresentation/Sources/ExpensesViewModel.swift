@@ -17,6 +17,9 @@ public final class ExpensesViewModel {
     
     public func fetch() async {
         isLoading = true
+        defer {
+            isLoading = false
+        }
         do {
             expenses = try await loadExpenses().map({ ExpenseViewModel(expense: $0) })
         } catch {

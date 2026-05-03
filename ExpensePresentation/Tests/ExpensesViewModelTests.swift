@@ -39,6 +39,44 @@ final class ExpensesViewModelTests {
             #expect(spy.messages == [.loadExpenses, .loadExpenses])
         })
     }
+
+    @Test
+    func isLoadingstate_isEnabled_whileFetching() async throws {
+        // Arrange
+        try await makeSUT(action: { sut, spy in
+            // Act
+            let firstFetchTask = Task {
+                await sut.fetch()
+            }
+            await Task.yield() 
+            
+            // Assert
+            #expect(sut.isLoading)
+            
+            // Act
+            spy.completeExpensesLoading(with: [], at: 0)
+            _ = await firstFetchTask.value
+            
+            // Assert
+            #expect(sut.isLoading == false)
+
+            // Act
+            let secondFetchTask = Task {
+                await sut.fetch()
+            }
+            await Task.yield() 
+            
+            // Assert
+            #expect(sut.isLoading)
+            
+            // Act
+            spy.completeExpensesLoading(with: [], at: 1)
+            _ = await secondFetchTask.value
+            
+            // Assert
+            #expect(sut.isLoading == false)
+        })
+    }
     
     @MainActor
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
