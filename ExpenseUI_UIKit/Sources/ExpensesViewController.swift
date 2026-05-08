@@ -54,8 +54,10 @@ extension ExpensesViewController {
     }
 
     private func fetchExpenses() {
+        refreshControl?.beginRefreshing()
         Task {
             await viewModel.fetch()
+            refreshControl?.endRefreshing()
         }
     }
 }

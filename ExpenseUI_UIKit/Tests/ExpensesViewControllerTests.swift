@@ -58,6 +58,40 @@ final class ExpensesViewControllerTests {
         })
     }
     
+    @Test
+    func loader_isVisible_whileFetchingExpenses() async {
+        // Arrange
+        await makeSUT(action: { sut, spy in
+            // Act
+            sut.simulateAppearance()
+            await Task.yield()
+            
+            // Assert
+            #expect(sut.isShowingLoadingIndicator)
+            
+            // Act
+            spy.completeExpensesLoading(with: [], at: 0)
+            await Task.yield()
+            
+            // Assert
+            #expect(!sut.isShowingLoadingIndicator)
+            
+            // Act
+            sut.simulateUserInitiatedReload()
+            await Task.yield()
+            
+            // Assert
+            #expect(sut.isShowingLoadingIndicator)
+            
+            // Act
+            spy.completeExpensesLoading(with: [], at: 1)
+            await Task.yield()
+            
+            // Assert
+            #expect(!sut.isShowingLoadingIndicator)
+        })
+    }
+    
     @MainActor
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
                          action: @MainActor (ExpensesViewController, Spy) async -> Void) async {
