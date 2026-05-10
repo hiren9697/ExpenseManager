@@ -89,6 +89,20 @@ final class ExpensesViewControllerTests {
             
             // Assert
             #expect(!sut.isShowingLoadingIndicator)
+            
+            // Act
+            sut.simulateUserInitiatedReload()
+            await Task.yield()
+            
+            // Assert
+            #expect(sut.isShowingLoadingIndicator)
+            
+            // Act
+            spy.completeExpensesLoadingWithError(anyNSError(), at: 2)
+            await Task.yield()
+            
+            // Assert
+            #expect(!sut.isShowingLoadingIndicator)
         })
     }
     
