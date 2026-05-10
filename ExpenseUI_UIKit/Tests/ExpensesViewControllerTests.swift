@@ -109,6 +109,8 @@ final class ExpensesViewControllerTests {
             await tracker(spy, sut)
             
             await action(sut, spy)
+            
+            try? await spy.cancelPendingRequests()
         })
     }
     
