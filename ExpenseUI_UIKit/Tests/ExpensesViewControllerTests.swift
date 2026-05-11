@@ -184,8 +184,8 @@ final class ExpensesViewControllerTests {
             
             throw Timeout()
         }
-        
         */
+        
         func cancelPendingRequests() async throws {
             for (index, request) in requests.enumerated() where request.result == nil {
                 request.continuation.finish(throwing: CancellationError())
