@@ -100,6 +100,30 @@ final class ExpensesViewControllerTests {
         })
     }
     
+    @Test
+    func fetchExpense_rendersSuccessfullyFetchedExpenses() async {
+        await makeSUT(action: { sut, spy in
+            let expense0 = makeExpense(amount: 10, note: "first expense description")
+            let expense1 = makeExpense(amount: 20, note: nil)
+            let expense2 = makeExpense(amount: 30, note: "third expense description")
+            let expense3 = makeExpense(amount: 40, note: "fourth expense description")
+            
+            sut.simulateAppearance()
+            await Task.yield()
+            assertThat(sut, isRendering: [])
+            
+            await spy.completeExpensesLoading(with: [expense0, expense1], at: 0)
+            await Task.yield()
+            assertThat(sut, isRendering: [expense0, expense1])
+            
+            sut.simulateUserInitiatedReload()
+            await Task.yield()
+            await spy.completeExpensesLoading(with: [expense0, expense1, expense2, expense3], at: 1)
+            await Task.yield()
+            assertThat(sut, isRendering: [expense0, expense1, expense2, expense3])
+        })
+    }
+    
     @MainActor
     private func makeSUT(sourceLocation: SourceLocation = #_sourceLocation,
                          action: @MainActor (ExpensesViewController, Spy) async -> Void) async {
@@ -198,6 +222,59 @@ final class ExpensesViewControllerTests {
     private func anyNSError() -> NSError {
         return NSError(domain: "any error", code: 0)
     }
+    
+    private func makeExpense(amount: Double = 100, date: Date = Date(), note: String? = nil) -> Expense {
+        return Expense(id: UUID(), amount: amount, date: date, note: note)
+    }
+}
+
+extension ExpensesViewControllerTests {
+    func assertThat(_ sut: ExpensesViewController,
+                    isRendering expenses: [Expense],
+                    sourceLocation: SourceLocation = #_sourceLocation) {
+        sut.tableView.layoutIfNeeded()
+        RunLoop.main.run(until: Date())
+        
+        guard sut.numberOfRenderedExpenseViews() == expenses.count else {
+            #expect(Bool(false),
+                    "Expected \(expenses.count) expenses, got \(sut.numberOfRenderedExpenseViews()) instead.",
+                    sourceLocation: sourceLocation)
+            return
+        }
+        
+        for (index, expense) in expenses.enumerated() {
+            assertThat(sut,
+                       hasViewConfiguredFor: expense,
+                       at: index,
+                       sourceLocation: sourceLocation)
+        }
+    }
+    
+    func assertThat(_ sut: ExpensesViewController,
+                    hasViewConfiguredFor expense: Expense,
+                    at index: Int,
+                    sourceLocation: SourceLocation = #_sourceLocation) {
+        let view = sut.expenseView(at: index)
+        
+        guard let cell = view as? ExpenseCell else {
+            #expect(Bool(false),
+                    "Expected \(ExpenseCell.self) instance, got \(String(describing: view)) instead",
+                    sourceLocation: sourceLocation)
+            return
+        }
+        
+        let expectedViewModel = ExpenseViewModel(expense: expense)
+        
+        #expect(cell.titleText == expectedViewModel.title,
+                "Expected title text to be \(expectedViewModel.title) for expense view at index (\(index))",
+                sourceLocation: sourceLocation)
+        #expect(cell.amountText == expectedViewModel.amountText,
+                "Expected amount text to be \(expectedViewModel.amountText) for expense view at index (\(index))",
+                sourceLocation: sourceLocation)
+        #expect(cell.dateText == expectedViewModel.dateText,
+                "Expected date text to be \(expectedViewModel.dateText) for expense view at index (\(index))",
+                sourceLocation: sourceLocation)
+    }
 }
 
 extension ExpensesViewController {
@@ -255,6 +332,18 @@ extension ExpensesViewController {
 	var isShowingLoadingIndicator: Bool {
 		return refreshControl?.isRefreshing == true
 	}
+	
+	func numberOfRenderedExpenseViews() -> Int {
+		return tableView.numberOfRows(inSection: expenseSection)
+	}
+	
+	func expenseView(at row: Int) -> UITableViewCell? {
+		let ds = tableView.dataSource
+		let index = IndexPath(row: row, section: expenseSection)
+		return ds?.tableView(tableView, cellForRowAt: index)
+	}
+	
+	private var expenseSection: Int { 0 }
 }
 
 extension UIRefreshControl {
