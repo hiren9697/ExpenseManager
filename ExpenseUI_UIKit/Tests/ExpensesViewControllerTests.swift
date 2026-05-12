@@ -24,31 +24,31 @@ final class ExpensesViewControllerTests {
             
             // Act
             sut.simulateAppearance()
-            await Task.yield()
-            await spy.completeExpensesLoading(with: [], at: 0)
+            await waitForNetworkRequestToFire()
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [], at: 0)
 
             // Assert
             #expect(spy.messages == [Spy.Message.loadExpenses])
             
             // Act
             sut.simulateAppearance()
-            await Task.yield()
+            await waitForNetworkRequestToFire()
             
             // Assert
             #expect(spy.messages == [Spy.Message.loadExpenses])
             
             // Act
             sut.simulateUserInitiatedReload()
-            await Task.yield()
-            await spy.completeExpensesLoading(with: [], at: 1)
+            await waitForNetworkRequestToFire()
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [], at: 1)
             
             // Assert
             #expect(spy.messages == [Spy.Message.loadExpenses, Spy.Message.loadExpenses])
             
             // Act
             sut.simulateUserInitiatedReload()
-            await Task.yield()
-            await spy.completeExpensesLoading(with: [], at: 2)
+            await waitForNetworkRequestToFire()
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [], at: 2)
             
             // Assert
             #expect(spy.messages == [Spy.Message.loadExpenses, Spy.Message.loadExpenses, Spy.Message.loadExpenses])
@@ -61,39 +61,39 @@ final class ExpensesViewControllerTests {
         await makeSUT(action: { sut, spy in
             // Act
             sut.simulateAppearance()
-            await Task.yield()
+            await waitForNetworkRequestToFire()
             
             // Assert
             #expect(sut.isShowingLoadingIndicator)
             
             // Act
-            await spy.completeExpensesLoading(with: [], at: 0)
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [], at: 0)
             
             // Assert
             #expect(!sut.isShowingLoadingIndicator)
             
             // Act
             sut.simulateUserInitiatedReload()
-            await Task.yield()
+            await waitForNetworkRequestToFire()
             
             // Assert
             #expect(sut.isShowingLoadingIndicator)
             
             // Act
-            await spy.completeExpensesLoading(with: [], at: 1)
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [], at: 1)
             
             // Assert
             #expect(!sut.isShowingLoadingIndicator)
             
             // Act
             sut.simulateUserInitiatedReload()
-            await Task.yield()
+            await waitForNetworkRequestToFire()
             
             // Assert
             #expect(sut.isShowingLoadingIndicator)
             
             // Act
-            await spy.completeExpensesLoadingWithError(anyNSError(), at: 2)
+            await spy.completeExpensesLoadingWithErrorAndWaitUntilConsumed(anyNSError(), at: 2)
             
             // Assert
             #expect(!sut.isShowingLoadingIndicator)
@@ -109,17 +109,17 @@ final class ExpensesViewControllerTests {
             let expense3 = makeExpense(amount: 40, note: "fourth expense description")
             
             sut.simulateAppearance()
-            await Task.yield()
+            await waitForNetworkRequestToFire()
             assertThat(sut, isRendering: [])
             
-            await spy.completeExpensesLoading(with: [expense0, expense1], at: 0)
-            await Task.yield()
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [expense0, expense1], at: 0)
+            await waitForUIUpdate()
             assertThat(sut, isRendering: [expense0, expense1])
             
             sut.simulateUserInitiatedReload()
-            await Task.yield()
-            await spy.completeExpensesLoading(with: [expense0, expense1, expense2, expense3], at: 1)
-            await Task.yield()
+            await waitForNetworkRequestToFire()
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [expense0, expense1, expense2, expense3], at: 1)
+            await waitForUIUpdate()
             assertThat(sut, isRendering: [expense0, expense1, expense2, expense3])
         })
     }
@@ -136,6 +136,14 @@ final class ExpensesViewControllerTests {
             
             try? await spy.cancelPendingRequests()
         })
+    }
+    
+    private func waitForNetworkRequestToFire() async {
+        await Task.yield()
+    }
+    
+    private func waitForUIUpdate() async {
+        await Task.yield()
     }
     
     // MARK: - Helpers
@@ -183,13 +191,13 @@ final class ExpensesViewControllerTests {
             }
         }
         
-        func completeExpensesLoading(with expenses: [Expense] = [], at index: Int = 0) async {
+        func completeExpensesLoadingAndWaitUntilConsumed(with expenses: [Expense] = [], at index: Int = 0) async {
             requests[index].continuation.yield(expenses)
             requests[index].continuation.finish()
             while requests[index].result == nil { await Task.yield() }
         }
         
-        func completeExpensesLoadingWithError(_ error: Error, at index: Int = 0) async {
+        func completeExpensesLoadingWithErrorAndWaitUntilConsumed(_ error: Error, at index: Int = 0) async {
             requests[index].continuation.finish(throwing: error)
             while requests[index].result == nil { await Task.yield() }
         }
