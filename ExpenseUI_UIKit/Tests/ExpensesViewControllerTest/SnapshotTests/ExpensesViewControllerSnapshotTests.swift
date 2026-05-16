@@ -6,44 +6,60 @@ import ExpensePresentation
 @MainActor
 final class ExpensesViewControllerSnapshotTests: XCTestCase {
     func test_emptyExpenses() async {
+        // Arrange
         let sut = makeSUT(loadExpenses: { [] })
+        
+        // Act
         sut.simulateAppearance()
         await waitForUIRendering()
         
+        // Assert
         assert(snapshot: sut.snapshot(for: .iPhone(style: .light)), named: "EMPTY_EXPENSES_light")
         assert(snapshot: sut.snapshot(for: .iPhone(style: .dark)), named: "EMPTY_EXPENSES_dark")
     }
     
     func test_expensesWithContent() async {
+        // Arrange
         let content = expensesWithContent()
         let sut = makeSUT(loadExpenses: { content })
+        
+        // Act
         sut.simulateAppearance()
         await waitForUIRendering()
         
+        // Assert
         assert(snapshot: sut.snapshot(for: .iPhone(style: .light)), named: "EXPENSES_WITH_CONTENT_light")
         assert(snapshot: sut.snapshot(for: .iPhone(style: .dark)), named: "EXPENSES_WITH_CONTENT_dark")
         assert(snapshot: sut.snapshot(for: .iPhone(style: .light, contentSize: .extraExtraExtraLarge)), named: "EXPENSES_WITH_CONTENT_light_extraExtraExtraLarge")
     }
     
     func test_expensesWithErrorMessage() async {
+        // Arrange
         let sut = makeSUT(loadExpenses: { throw NSError(domain: "error", code: 0) })
+        
+        // Act
         sut.simulateAppearance()
         await waitForUIRendering()
         
+        // Assert
         assert(snapshot: sut.snapshot(for: .iPhone(style: .light)), named: "EXPENSES_WITH_ERROR_MESSAGE_light")
         assert(snapshot: sut.snapshot(for: .iPhone(style: .dark)), named: "EXPENSES_WITH_ERROR_MESSAGE_dark")
         assert(snapshot: sut.snapshot(for: .iPhone(style: .light, contentSize: .extraExtraExtraLarge)), named: "EXPENSES_WITH_ERROR_MESSAGE_light_extraExtraExtraLarge")
     }
     
     func test_expensesWithLoadingIndicator() async {
+        // Arrange
         // Sleep to ensure the load doesn't finish before the snapshot
         let sut = makeSUT(loadExpenses: { 
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             return []
         })
+        
+        // Act
         sut.simulateAppearance()
         await waitForUIRendering()
         
+        // Assert
         assert(snapshot: sut.snapshot(for: .iPhone(style: .light)), named: "EXPENSES_WITH_LOADING_INDICATOR_light")
         assert(snapshot: sut.snapshot(for: .iPhone(style: .dark)), named: "EXPENSES_WITH_LOADING_INDICATOR_dark")
     }
