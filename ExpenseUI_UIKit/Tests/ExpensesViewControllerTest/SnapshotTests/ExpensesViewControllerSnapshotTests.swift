@@ -7,11 +7,13 @@ import ExpensePresentation
 final class ExpensesViewControllerSnapshotTests: XCTestCase {
     func test_emptyExpenses() async {
         // Arrange
-        let sut = makeSUT(loadExpenses: { [] })
+        let (sut, spy) = makeSUT()
         
         // Act
         sut.simulateAppearance()
-        await waitForUIRendering()
+        await waitForNetworkRequestToFire()
+        await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [])
+        await waitForUIUpdate()
         
         // Assert
         assert(snapshot: sut.snapshot(for: .iPhone(style: .light)), named: "EMPTY_EXPENSES_light")
@@ -20,12 +22,13 @@ final class ExpensesViewControllerSnapshotTests: XCTestCase {
     
     func test_expensesWithContent() async {
         // Arrange
-        let content = expensesWithContent()
-        let sut = makeSUT(loadExpenses: { content })
+        let (sut, spy) = makeSUT()
         
         // Act
         sut.simulateAppearance()
-        await waitForUIRendering()
+        await waitForNetworkRequestToFire()
+        await spy.completeExpensesLoadingAndWaitUntilConsumed(with: expensesWithContent())
+        await waitForUIUpdate()
         
         // Assert
         assert(snapshot: sut.snapshot(for: .iPhone(style: .light)), named: "EXPENSES_WITH_CONTENT_light")
@@ -35,11 +38,13 @@ final class ExpensesViewControllerSnapshotTests: XCTestCase {
     
     func test_expensesWithErrorMessage() async {
         // Arrange
-        let sut = makeSUT(loadExpenses: { throw NSError(domain: "error", code: 0) })
+        let (sut, spy) = makeSUT()
         
         // Act
         sut.simulateAppearance()
-        await waitForUIRendering()
+        await waitForNetworkRequestToFire()
+        await spy.completeExpensesLoadingWithErrorAndWaitUntilConsumed(NSError(domain: "error", code: 0))
+        await waitForUIUpdate()
         
         // Assert
         assert(snapshot: sut.snapshot(for: .iPhone(style: .light)), named: "EXPENSES_WITH_ERROR_MESSAGE_light")
@@ -49,15 +54,11 @@ final class ExpensesViewControllerSnapshotTests: XCTestCase {
     
     func test_expensesWithLoadingIndicator() async {
         // Arrange
-        // Sleep to ensure the load doesn't finish before the snapshot
-        let sut = makeSUT(loadExpenses: { 
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            return []
-        })
+        let (sut, _) = makeSUT()
         
         // Act
         sut.simulateAppearance()
-        await waitForUIRendering()
+        await waitForUIUpdate()
         
         // Assert
         assert(snapshot: sut.snapshot(for: .iPhone(style: .light)), named: "EXPENSES_WITH_LOADING_INDICATOR_light")
@@ -65,17 +66,22 @@ final class ExpensesViewControllerSnapshotTests: XCTestCase {
     }
 
     // MARK: - Helpers
-    private func makeSUT(loadExpenses: @escaping @Sendable () async throws -> [Expense]) -> ExpensesViewController {
-        let viewModel = ExpensesViewModel(loadExpenses: loadExpenses)
+    private func makeSUT() -> (ExpensesViewController, Spy) {
+        let spy = Spy()
+        let viewModel = ExpensesViewModel(loadExpenses: spy.loadExpenses)
         let sut = ExpensesViewController(viewModel: viewModel)
         sut.loadViewIfNeeded()
         sut.tableView.showsVerticalScrollIndicator = false
         sut.tableView.showsHorizontalScrollIndicator = false
-        return sut
+        return (sut, spy)
     }
     
-    private func waitForUIRendering() async {
-        try? await Task.sleep(nanoseconds: 10_000_000)
+    private func waitForNetworkRequestToFire() async {
+        await Task.yield()
+    }
+    
+    private func waitForUIUpdate() async {
+        await Task.yield()
     }
     
     private func expensesWithContent() -> [Expense] {
