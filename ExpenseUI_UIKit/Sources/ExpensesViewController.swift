@@ -86,6 +86,10 @@ extension ExpensesViewController {
         errorView.onRetry = { [weak self] in
             self?.loadExpenses()
         }
+        
+        emptyView.onRetry = { [weak self] in
+            self?.loadExpenses()
+        }
     }
 
     private func setupTableView() {

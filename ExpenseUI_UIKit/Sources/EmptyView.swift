@@ -16,6 +16,13 @@ public final class EmptyView: UIView {
         return label
     }()
     
+    public let retryButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("Retry", for: .normal)
+        return button
+    }()
+    
     private let stackView: UIStackView = {
         let stackView = UIStackView()
         stackView.translatesAutoresizingMaskIntoConstraints = false
@@ -24,6 +31,8 @@ public final class EmptyView: UIView {
         stackView.spacing = 16
         return stackView
     }()
+    
+    public var onRetry: (() -> Void)?
     
     public init(image: UIImage? = nil, message: String? = nil) {
         super.init(frame: .zero)
@@ -47,6 +56,9 @@ public final class EmptyView: UIView {
         addSubview(stackView)
         stackView.addArrangedSubview(imageView)
         stackView.addArrangedSubview(messageLabel)
+        stackView.addArrangedSubview(retryButton)
+        
+        retryButton.addTarget(self, action: #selector(retryButtonTapped), for: .touchUpInside)
         
         NSLayoutConstraint.activate([
             stackView.centerXAnchor.constraint(equalTo: centerXAnchor),
@@ -54,5 +66,9 @@ public final class EmptyView: UIView {
             stackView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 16),
             stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16)
         ])
+    }
+    
+    @objc private func retryButtonTapped() {
+        onRetry?()
     }
 }
