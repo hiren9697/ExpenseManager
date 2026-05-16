@@ -20,7 +20,7 @@ final class ExpensesViewModelTests {
         await makeSUT(action: { sut, spy in
             // Act
             let firstFetchTask = Task {
-                await sut.fetch()
+                await sut.load()
             }
             await Task.yield() 
             spy.completeExpensesLoading(with: [], at: 0)
@@ -30,7 +30,7 @@ final class ExpensesViewModelTests {
             #expect(spy.messages == [.loadExpenses])
 
             // Act
-            let secondFetchTask = Task { await sut.fetch() }
+            let secondFetchTask = Task { await sut.load() }
             await Task.yield()
             spy.completeExpensesLoading(with: [], at: 1)
             let _ = await secondFetchTask.value
@@ -46,7 +46,7 @@ final class ExpensesViewModelTests {
         await makeSUT(action: { sut, spy in
             // Act
             let firstFetchTask = Task {
-                await sut.fetch()
+                await sut.load()
             }
             await Task.yield() 
             
@@ -62,7 +62,7 @@ final class ExpensesViewModelTests {
 
             // Act
             let secondFetchTask = Task {
-                await sut.fetch()
+                await sut.load()
             }
             await Task.yield() 
             
@@ -87,7 +87,7 @@ final class ExpensesViewModelTests {
             
             // Act
             let fetchTask = Task {
-                await sut.fetch()
+                await sut.load()
             }
             await Task.yield()
             spy.completeExpensesLoadingWithError(anyNSError(), at: 0)
@@ -98,7 +98,7 @@ final class ExpensesViewModelTests {
 
             // Act
             let secondFetchTask = Task {
-                await sut.fetch()
+                await sut.load()
             }
             await Task.yield()
 
@@ -124,7 +124,7 @@ final class ExpensesViewModelTests {
         let thirdResultViewModels = thirdResult.map({ ExpenseViewModel(expense: $0) })
         await makeSUT { sut, spy in
             // Act
-            let fetchTask = Task { await sut.fetch() }
+            let fetchTask = Task { await sut.load() }
             await Task.yield()
             spy.completeExpensesLoading(with: firstResult, at: 0)
             let _ = await fetchTask.value
@@ -133,7 +133,7 @@ final class ExpensesViewModelTests {
             #expect(sut.expenses == firstResultViewModels)
 
             // Act
-            let secondFetchTask = Task { await sut.fetch() }
+            let secondFetchTask = Task { await sut.load() }
             await Task.yield()
             spy.completeExpensesLoadingWithError(anyNSError(), at: 1)
             let _ = await secondFetchTask.value
@@ -142,7 +142,7 @@ final class ExpensesViewModelTests {
             #expect(sut.expenses == nil)
             
             // Act
-            let thirdFetchTask = Task { await sut.fetch() }
+            let thirdFetchTask = Task { await sut.load() }
             await Task.yield()
             spy.completeExpensesLoading(with: thirdResult, at: 2)
             let _ = await thirdFetchTask.value

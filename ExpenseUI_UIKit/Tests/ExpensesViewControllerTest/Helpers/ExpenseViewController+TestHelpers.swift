@@ -33,13 +33,13 @@ extension ExpensesViewController {
     private func replaceRefreshControlWithFakeForiOS17PlusSupport() {
         let fakeRefreshControl = FakeUIRefreshControl()
         
-        refreshControl?.allTargets.forEach { target in
-            refreshControl?.actions(forTarget: target, forControlEvent: .valueChanged)?.forEach { action in
+        tableView.refreshControl?.allTargets.forEach { target in
+            tableView.refreshControl?.actions(forTarget: target, forControlEvent: .valueChanged)?.forEach { action in
                 fakeRefreshControl.addTarget(target, action: Selector(action), for: .valueChanged)
             }
         }
         
-        refreshControl = fakeRefreshControl
+        tableView.refreshControl = fakeRefreshControl
     }
     
     private class FakeUIRefreshControl: UIRefreshControl {
@@ -57,11 +57,15 @@ extension ExpensesViewController {
     }
     
     func simulateUserInitiatedReload() {
-        refreshControl?.simulatePullToRefresh()
+        tableView.refreshControl?.simulatePullToRefresh()
+    }
+    
+    func simulateErrorViewRetryAction() {
+        errorView.retryButton.simulateTap()
     }
     
     var isShowingLoadingIndicator: Bool {
-        return refreshControl?.isRefreshing == true
+        return tableView.refreshControl?.isRefreshing == true
     }
     
     func numberOfRenderedExpenseViews() -> Int {
@@ -75,4 +79,14 @@ extension ExpensesViewController {
     }
     
     private var expenseSection: Int { 0 }
+}
+
+extension UIButton {
+    func simulateTap() {
+        allTargets.forEach { target in
+            actions(forTarget: target, forControlEvent: .touchUpInside)?.forEach { action in
+                (target as NSObject).perform(Selector(action))
+            }
+        }
+    }
 }

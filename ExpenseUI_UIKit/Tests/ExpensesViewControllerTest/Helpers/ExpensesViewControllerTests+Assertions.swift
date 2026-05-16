@@ -54,4 +54,15 @@ extension ExpensesViewControllerTests {
                 "Expected date text to be \(expectedViewModel.dateText) for expense view at index (\(index))",
                 sourceLocation: sourceLocation)
     }
+    
+    func assertDataFetchErrorViewDisplayed(_ sut: ExpensesViewController, sourceLocation: SourceLocation = #_sourceLocation) {
+        #expect(sut.errorView.isHidden == false, "Expected ErrorView to be visible", sourceLocation: sourceLocation)
+        #expect(sut.tableView.isHidden == true, "Expected TableView to be hidden", sourceLocation: sourceLocation)
+        #expect(sut.errorView.messageLabel.text == ExpensesViewModel.fetchErrorMessage, "Expected error message to match fetchErrorMessage", sourceLocation: sourceLocation)
+    }
+
+    func assertDataFetchEmptyViewDisplayed(_ sut: ExpensesViewController, sourceLocation: SourceLocation = #_sourceLocation) {
+        #expect(sut.emptyView.isHidden == false, "Expected EmptyView to be visible", sourceLocation: sourceLocation)
+        #expect(sut.tableView.isHidden == true, "Expected TableView to be hidden", sourceLocation: sourceLocation)
+    }
 }

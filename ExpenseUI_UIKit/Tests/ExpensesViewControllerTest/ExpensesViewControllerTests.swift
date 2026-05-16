@@ -14,7 +14,6 @@ import ExpenseUI_UIKit
 @Suite(.timeLimit(.minutes(1)))
 @MainActor
 final class ExpensesViewControllerTests {
-    // MARK: - Tests
     @Test
     func loadExpensesAction_requestsExpenses() async {
         // Arrange
@@ -121,6 +120,49 @@ final class ExpensesViewControllerTests {
             await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [expense0, expense1, expense2, expense3], at: 1)
             await waitForUIUpdate()
             assertThat(sut, isRendering: [expense0, expense1, expense2, expense3])
+        })
+    }
+    
+    @Test
+    func fetchExpenses_showErrorView_onError() async {
+        // Arrange
+        await makeSUT(action: { sut, spy in
+            // Act
+            sut.simulateAppearance()
+            await waitForNetworkRequestToFire()
+            await spy.completeExpensesLoadingWithErrorAndWaitUntilConsumed(anyNSError(), at: 0)
+            await waitForUIUpdate()
+            
+            // Assert
+            assertDataFetchErrorViewDisplayed(sut)
+            
+            // Act
+            sut.simulateErrorViewRetryAction()
+            await waitForNetworkRequestToFire()
+            
+            // Assert
+            #expect(spy.messages == [.loadExpenses, .loadExpenses])
+        })
+    }
+    
+    @Test
+    func fetchExpenses_showEmptyView_onEmptyData() async {
+        await makeSUT(action: { sut, spy in
+            // Act
+            sut.simulateAppearance()
+            await waitForNetworkRequestToFire()
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [], at: 0)
+            await waitForUIUpdate()
+            
+            // Assert
+            assertDataFetchEmptyViewDisplayed(sut)
+            
+            // Act
+            sut.simulateErrorViewRetryAction()
+            await waitForNetworkRequestToFire()
+            
+            // Assert
+            #expect(spy.messages == [.loadExpenses, .loadExpenses])
         })
     }
     
