@@ -21,6 +21,7 @@ public class SaveExpenseViewModel {
         self.saveExpense = saveExpense
         self.completion = completion
     }
+    public static let saveErrorMessage = "Failed to save expense. Please try again."
     
     public func save(draft: DraftExpense) async {
         defer {
@@ -33,7 +34,7 @@ public class SaveExpenseViewModel {
             try await saveExpense(draft)
             completion() 
         } catch {
-            errorMessage = "Failed to save expense. Please try again."
+            errorMessage = Self.saveErrorMessage
         }
     }
 }

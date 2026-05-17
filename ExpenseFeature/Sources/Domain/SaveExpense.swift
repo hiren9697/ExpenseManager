@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct DraftExpense: Sendable {
+public struct DraftExpense: Sendable, Equatable {
     public let amount: Double
     public let date: Date
     public let note: String?
