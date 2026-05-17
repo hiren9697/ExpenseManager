@@ -182,7 +182,7 @@ final class ExpensesViewControllerTests {
                          action: @MainActor (ExpensesViewController, Spy) async -> Void) async {
         await withMemoryLeakTracking(sourceLocation: sourceLocation, testBody: { tracker in
             let spy = Spy()
-            let sut = ExpensesViewControllerComposer.compose(viewModel: ExpensesViewModel(loadExpenses: spy.loadExpenses))   
+            let sut = ExpensesViewControllerComposer.compose(loadExpenses: spy.loadExpenses)   
             await tracker(spy, sut)
             
             await action(sut, spy)
