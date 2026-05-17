@@ -8,6 +8,10 @@
 import Foundation
 
 extension ExpensesViewModelTests {
+    func waitForFetchRequestToFire() async {
+        await Task.yield()
+    }
+
     func anyNSError() -> NSError {
         return NSError(domain: "any error", code: 0)
     }

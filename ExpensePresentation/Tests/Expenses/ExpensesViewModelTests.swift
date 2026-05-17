@@ -19,21 +19,19 @@ final class ExpensesViewModelTests {
         // Arrange
         await makeSUT(action: { sut, spy in
             // Act
-            let firstFetchTask = Task {
+            Task {
                 await sut.load()
             }
-            await Task.yield() 
-            spy.completeExpensesLoading(with: [], at: 0)
-            let _ = await firstFetchTask.value
+            await waitForFetchRequestToFire() 
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [], at: 0)
             
             // Assert   
             #expect(spy.messages == [.loadExpenses])
 
             // Act
-            let secondFetchTask = Task { await sut.load() }
-            await Task.yield()
-            spy.completeExpensesLoading(with: [], at: 1)
-            let _ = await secondFetchTask.value
+            Task { await sut.load() }
+            await waitForFetchRequestToFire()
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [], at: 1)
             
             // Assert   
             #expect(spy.messages == [.loadExpenses, .loadExpenses])
@@ -45,33 +43,31 @@ final class ExpensesViewModelTests {
         // Arrange
         await makeSUT(action: { sut, spy in
             // Act
-            let firstFetchTask = Task {
+            Task {
                 await sut.load()
             }
-            await Task.yield() 
+            await waitForFetchRequestToFire() 
             
             // Assert
             #expect(sut.isLoading)
             
             // Act
-            spy.completeExpensesLoading(with: [], at: 0)
-            _ = await firstFetchTask.value
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [], at: 0)
             
             // Assert
             #expect(sut.isLoading == false)
 
             // Act
-            let secondFetchTask = Task {
+            Task {
                 await sut.load()
             }
-            await Task.yield() 
+            await waitForFetchRequestToFire() 
             
             // Assert
             #expect(sut.isLoading)
             
             // Act
-            spy.completeExpensesLoading(with: [], at: 1)
-            _ = await secondFetchTask.value
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [], at: 1)
             
             // Assert
             #expect(sut.isLoading == false)
@@ -86,28 +82,26 @@ final class ExpensesViewModelTests {
             #expect(sut.fetchError == nil)
             
             // Act
-            let fetchTask = Task {
+            Task {
                 await sut.load()
             }
-            await Task.yield()
-            spy.completeExpensesLoadingWithError(anyNSError(), at: 0)
-            let _ = await fetchTask.value
+            await waitForFetchRequestToFire()
+            await spy.completeExpensesLoadingWithErrorAndWaitUntilConsumed(anyNSError(), at: 0)
             
             // Assert
             #expect(sut.fetchError == ExpensesViewModel.fetchErrorMessage)
 
             // Act
-            let secondFetchTask = Task {
+            Task {
                 await sut.load()
             }
-            await Task.yield()
+            await waitForFetchRequestToFire()
 
             // Assert
             #expect(sut.fetchError == nil)
             
             // Act
-            spy.completeExpensesLoadingWithError(anyNSError(), at: 1)
-            let _ = await secondFetchTask.value
+            await spy.completeExpensesLoadingWithErrorAndWaitUntilConsumed(anyNSError(), at: 1)
             
             // Assert
             #expect(sut.fetchError == ExpensesViewModel.fetchErrorMessage)
@@ -124,28 +118,25 @@ final class ExpensesViewModelTests {
         let thirdResultViewModels = thirdResult.map({ ExpenseViewModel(expense: $0) })
         await makeSUT { sut, spy in
             // Act
-            let fetchTask = Task { await sut.load() }
-            await Task.yield()
-            spy.completeExpensesLoading(with: firstResult, at: 0)
-            let _ = await fetchTask.value
+            Task { await sut.load() }
+            await waitForFetchRequestToFire()
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: firstResult, at: 0)
             
             // Assert
             #expect(sut.expenses == firstResultViewModels)
 
             // Act
-            let secondFetchTask = Task { await sut.load() }
-            await Task.yield()
-            spy.completeExpensesLoadingWithError(anyNSError(), at: 1)
-            let _ = await secondFetchTask.value
+            Task { await sut.load() }
+            await waitForFetchRequestToFire()
+            await spy.completeExpensesLoadingWithErrorAndWaitUntilConsumed(anyNSError(), at: 1)
             
             // Assert
             #expect(sut.expenses == nil)
             
             // Act
-            let thirdFetchTask = Task { await sut.load() }
-            await Task.yield()
-            spy.completeExpensesLoading(with: thirdResult, at: 2)
-            let _ = await thirdFetchTask.value
+            Task { await sut.load() }
+            await waitForFetchRequestToFire()
+            await spy.completeExpensesLoadingAndWaitUntilConsumed(with: thirdResult, at: 2)
             
             // Assert
             #expect(sut.expenses == thirdResultViewModels)

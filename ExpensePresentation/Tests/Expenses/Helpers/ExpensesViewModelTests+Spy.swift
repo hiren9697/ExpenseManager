@@ -10,35 +10,65 @@ import ExpenseFeature
 extension ExpensesViewModelTests {
     @MainActor
     class Spy: Sendable {
+        private enum AsyncResult {
+            case success
+            case failure
+            case cancelled
+        }
         enum Message { 
             case loadExpenses 
         }
+        private struct Request {
+            let param: Message
+            let stream: AsyncThrowingStream<[Expense], Error>
+            let continuation: AsyncThrowingStream<[Expense], Error>.Continuation
+            var result: AsyncResult?
+        }
+        private struct NoResponse: Error {}
+        private struct Timeout: Error {}
         
-        var messages: [Message] = []
+        private var requests: [Request] = []
         
-        private var requests: [(stream: AsyncThrowingStream<[Expense], Error>,
-                                continuation: AsyncThrowingStream<[Expense], Error>.Continuation)] = []
+        var messages: [Message] { requests.map(\.param) }
         
         func loadExpenses() async throws -> [Expense] {
-            messages.append(.loadExpenses)
-            
+            let index = requests.count
             let (stream, continuation) = AsyncThrowingStream<[Expense], Error>.makeStream()
-            requests.append((stream, continuation))
+            requests.append(Request(param: Message.loadExpenses, stream: stream, continuation: continuation))
             
-            for try await result in stream {
-                return result
+            do {
+                for try await result in stream {
+                    try Task.checkCancellation()
+                    requests[index].result = .success
+                    return result
+                }
+                
+                try Task.checkCancellation()
+                
+                throw NoResponse()
+            } catch {
+                requests[index].result = Task.isCancelled ? .cancelled : .failure
+                throw error
             }
-            
-            throw CancellationError()
         }
         
-        func completeExpensesLoading(with expenses: [Expense] = [], at index: Int = 0) {
+        func completeExpensesLoadingAndWaitUntilConsumed(with expenses: [Expense] = [], at index: Int = 0) async {
             requests[index].continuation.yield(expenses)
             requests[index].continuation.finish()
+            while requests[index].result == nil { await Task.yield() }
         }
         
-        func completeExpensesLoadingWithError(_ error: Error, at index: Int = 0) {
+        func completeExpensesLoadingWithErrorAndWaitUntilConsumed(_ error: Error, at index: Int = 0) async {
             requests[index].continuation.finish(throwing: error)
+            while requests[index].result == nil { await Task.yield() }
+        }
+        
+        func cancelPendingRequests() async throws {
+            for (index, request) in requests.enumerated() where request.result == nil {
+                request.continuation.finish(throwing: CancellationError())
+                
+                while requests[index].result == nil { await Task.yield() }
+            }
         }
     } 
 }
