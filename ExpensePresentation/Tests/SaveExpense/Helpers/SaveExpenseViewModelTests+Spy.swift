@@ -12,35 +12,65 @@ import ExpenseFeature
 extension SaveExpenseViewModelTests {
     @MainActor
     class Spy: Sendable {
+        private enum AsyncResult {
+            case success
+            case failure
+            case cancelled
+        }
         enum Message: Equatable { 
             case save(DraftExpense) 
         }
+        private struct Request {
+            let param: Message
+            let stream: AsyncThrowingStream<Void, Error>
+            let continuation: AsyncThrowingStream<Void, Error>.Continuation
+            var result: AsyncResult?
+        }
+        private struct NoResponse: Error {}
+        private struct Timeout: Error {}
         
-        var messages: [Message] = []
+        private var requests: [Request] = []
         
-        private var requests: [(stream: AsyncThrowingStream<Void, Error>,
-                                continuation: AsyncThrowingStream<Void, Error>.Continuation)] = []
+        var messages: [Message] { requests.map(\.param) }
         
         func save(draft: DraftExpense) async throws {
-            messages.append(.save(draft))
-            
+            let index = requests.count
             let (stream, continuation) = AsyncThrowingStream<Void, Error>.makeStream()
-            requests.append((stream, continuation))
+            requests.append(Request(param: .save(draft), stream: stream, continuation: continuation))
             
-            for try await _ in stream {
-                return
+            do {
+                for try await _ in stream {
+                    try Task.checkCancellation()
+                    requests[index].result = .success
+                    return
+                }
+                
+                try Task.checkCancellation()
+                
+                throw NoResponse()
+            } catch {
+                requests[index].result = Task.isCancelled ? .cancelled : .failure
+                throw error
             }
-            
-            throw CancellationError()
         }
         
-        func completeSaveSuccessfully(at index: Int = 0) {
+        func completeSaveSuccessfullyAndWaitUntilConsumed(at index: Int = 0) async {
             requests[index].continuation.yield(())
             requests[index].continuation.finish()
+            while requests[index].result == nil { await Task.yield() }
         }
         
-        func completeSaveWithError(_ error: Error, at index: Int = 0) {
+        func completeSaveWithErrorAndWaitUntilConsumed(_ error: Error, at index: Int = 0) async {
             requests[index].continuation.finish(throwing: error)
+            while requests[index].result == nil { await Task.yield() }
+        }
+        
+        func cancelPendingRequests() async throws {
+            for (index, request) in requests.enumerated() where request.result == nil {
+                request.continuation.finish(throwing: CancellationError())
+                
+                while requests[index].result == nil { await Task.yield() }
+            }
         }
     } 
 }

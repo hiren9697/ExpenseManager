@@ -21,24 +21,21 @@ final class SaveExpenseViewModelTests {
             let draft2 = DraftExpense(amount: 50.0, date: Date(timeIntervalSince1970: 200), note: nil)
             
             // Act
-            let saveTask1 = Task {
+            Task {
                 await sut.save(draft: draft1)
             }
             await waitForSaveRequestToFire()
-            spy.completeSaveSuccessfully(at: 0)
-            // await Task.yield()
-            // _ = await saveTask1.value
+            await spy.completeSaveSuccessfullyAndWaitUntilConsumed(at: 0)
             
             // Assert
             #expect(spy.messages == [.save(draft1)])
             
             // Act
-            let saveTask2 = Task {
+            Task {
                 await sut.save(draft: draft2)
             }
             await waitForSaveRequestToFire()
-            spy.completeSaveSuccessfully(at: 1)
-            // _ = await saveTask2.value
+            await spy.completeSaveSuccessfullyAndWaitUntilConsumed(at: 1)
             
             // Assert
             #expect(spy.messages == [
@@ -55,7 +52,7 @@ final class SaveExpenseViewModelTests {
             let draft = DraftExpense(amount: 100.0, date: Date(timeIntervalSince1970: 100), note: "Dinner")
             
             // Act
-            let saveTask = Task {
+            Task {
                 await sut.save(draft: draft)
             }
             await waitForSaveRequestToFire()
@@ -64,9 +61,7 @@ final class SaveExpenseViewModelTests {
             #expect(sut.isLoading)
             
             // Act
-            spy.completeSaveSuccessfully(at: 0)
-            await Task.yield()
-            // _ = await saveTask.value
+            await spy.completeSaveSuccessfullyAndWaitUntilConsumed(at: 0)
             
             // Assert
             #expect(sut.isLoading == false)
@@ -83,18 +78,17 @@ final class SaveExpenseViewModelTests {
             #expect(sut.errorMessage == nil)
             
             // Act
-            let saveTask1 = Task {
+            Task {
                 await sut.save(draft: draft)
             }
             await waitForSaveRequestToFire()
-            spy.completeSaveWithError(anyNSError(), at: 0)
-            _ = await saveTask1.value
+            await spy.completeSaveWithErrorAndWaitUntilConsumed(anyNSError(), at: 0)
             
             // Assert
             #expect(sut.errorMessage == SaveExpenseViewModel.saveErrorMessage)
             
             // Act
-            let saveTask2 = Task {
+            Task {
                 await sut.save(draft: draft)
             }
             await waitForSaveRequestToFire()
@@ -103,8 +97,7 @@ final class SaveExpenseViewModelTests {
             #expect(sut.errorMessage == nil)
             
             // Act
-            spy.completeSaveWithError(anyNSError(), at: 1)
-            _ = await saveTask2.value
+            await spy.completeSaveWithErrorAndWaitUntilConsumed(anyNSError(), at: 1)
             
             // Assert
             #expect(sut.errorMessage == SaveExpenseViewModel.saveErrorMessage)
@@ -123,12 +116,11 @@ final class SaveExpenseViewModelTests {
             let draft = DraftExpense(amount: 100.0, date: Date(timeIntervalSince1970: 100), note: "Dinner")
             
             // Act
-            let saveTask = Task {
+            Task {
                 await sut.save(draft: draft)
             }
             await waitForSaveRequestToFire()
-            spy.completeSaveSuccessfully(at: 0)
-            _ = await saveTask.value
+            await spy.completeSaveSuccessfullyAndWaitUntilConsumed(at: 0)
             
             // Assert
             #expect(completedCount == 1)
