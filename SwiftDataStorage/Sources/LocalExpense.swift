@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftData
-import Domain
+import ExpenseFeature
 
 // This is a plain struct! It is automatically Sendable and thread-safe.
 public struct LocalExpense: Equatable, Sendable {

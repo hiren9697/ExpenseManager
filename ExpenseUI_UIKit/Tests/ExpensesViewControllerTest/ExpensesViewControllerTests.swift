@@ -101,24 +101,34 @@ final class ExpensesViewControllerTests {
     
     @Test
     func fetchExpense_rendersSuccessfullyFetchedExpenses() async {
+        // Arrange
         await makeSUT(action: { sut, spy in
             let expense0 = makeExpense(amount: 10, note: "first expense description")
             let expense1 = makeExpense(amount: 20, note: nil)
             let expense2 = makeExpense(amount: 30, note: "third expense description")
             let expense3 = makeExpense(amount: 40, note: "fourth expense description")
             
+            // Act
             sut.simulateAppearance()
             await waitForNetworkRequestToFire()
+            
+            // Assert
             assertThat(sut, isRendering: [])
             
+            // Act
             await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [expense0, expense1], at: 0)
             await waitForUIUpdate()
+            
+            // Assert
             assertThat(sut, isRendering: [expense0, expense1])
             
+            // Act
             sut.simulateUserInitiatedReload()
             await waitForNetworkRequestToFire()
             await spy.completeExpensesLoadingAndWaitUntilConsumed(with: [expense0, expense1, expense2, expense3], at: 1)
             await waitForUIUpdate()
+            
+            // Assert
             assertThat(sut, isRendering: [expense0, expense1, expense2, expense3])
         })
     }
@@ -147,6 +157,7 @@ final class ExpensesViewControllerTests {
     
     @Test
     func fetchExpenses_showEmptyView_onEmptyData() async {
+        // Arrange
         await makeSUT(action: { sut, spy in
             // Act
             sut.simulateAppearance()
@@ -158,7 +169,7 @@ final class ExpensesViewControllerTests {
             assertDataFetchEmptyViewDisplayed(sut)
             
             // Act
-            sut.simulateErrorViewRetryAction()
+            sut.simulateEmptyViewRetryAction()
             await waitForNetworkRequestToFire()
             
             // Assert

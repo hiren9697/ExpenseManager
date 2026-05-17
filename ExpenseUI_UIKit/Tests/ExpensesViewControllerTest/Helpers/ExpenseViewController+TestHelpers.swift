@@ -64,6 +64,10 @@ extension ExpensesViewController {
         errorView.retryButton.simulateTap()
     }
     
+    func simulateEmptyViewRetryAction() {
+        emptyView.retryButton.simulateTap()
+    }
+    
     var isShowingLoadingIndicator: Bool {
         return tableView.refreshControl?.isRefreshing == true
     }

@@ -116,7 +116,7 @@ final class ExpensesViewModelTests {
     
     @Test
     func fetch_setsExpenses_onSuccessResponse() async throws {
-            // Arrange
+        // Arrange
         let firstResult = [Expense(id: UUID(), amount: 100, date: Date(), note: "Lunch")]
         let firstResultViewModels = firstResult.map({ ExpenseViewModel(expense: $0) })
         let thirdResult = [Expense(id: UUID(), amount: 500, date: Date(), note: "Medicines"),

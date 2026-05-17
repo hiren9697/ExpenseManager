@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftData
-import Domain
+import ExpenseFeature
 
 extension SwiftDataStore {
     public enum InsertionError: Error {

@@ -8,7 +8,7 @@
 import Foundation
 import Testing
 import SwiftData
-import Domain
+import ExpenseFeature
 @testable import SwiftDataStorage
 
 @Suite("Expense Swift Data Store Tests")
@@ -27,6 +27,7 @@ struct ExpenseSwiftDataStoreTests {
     
     @Test("Load delivers expenses on a non-empty database")
     func load_deliversExpenses_onNonEmptyDatabase() async throws {
+        // Arrange
         let today = Date()
         let firstExpense = uniqueExpense(date: today.adding(seconds: 1)) // Most recent
         let secondExpense = uniqueExpense(amount: 2, date: today, note: "Second expense note") // Older
@@ -82,7 +83,7 @@ struct ExpenseSwiftDataStoreTests {
             // Act
             try await store.insert(expense: duplicateExpense)
             
-            //  Assert
+            // Assert
             let expenses = try await store.fetch()
             #expect(expenses.count == 1, "Expected only 1 expense after upsert")
             #expect(expenses.first?.amount == 20, "Expected amount to be updated")
