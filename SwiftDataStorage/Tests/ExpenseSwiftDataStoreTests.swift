@@ -117,34 +117,4 @@ struct ExpenseSwiftDataStoreTests {
             try await action(sut)
         })
     }
-    
-    private func uniqueExpense(amount: Double = 1.0, date: Date = Date(), note: String? = nil) -> LocalExpense {
-        LocalExpense(id: UUID(), amount: amount, date: date, note: note)
-    }
-    
-    private func compare(input: [LocalExpense], fetched: [LocalExpense], sourceLocation: SourceLocation = #_sourceLocation) {
-        #expect(input.count == fetched.count,
-                "Expected list of expenses to have the same count as the fetched list",
-                sourceLocation: sourceLocation)
-        for (inputExpense, fetchedExpense) in zip(input, fetched) {
-            compare(input: inputExpense, fetched: fetchedExpense, sourceLocation: sourceLocation)
-        }
-    }
-    
-    private func compare(input: LocalExpense, fetched: LocalExpense, sourceLocation: SourceLocation = #_sourceLocation) {
-        #expect(input.id == fetched.id, sourceLocation: sourceLocation)
-        #expect(input.amount == fetched.amount, sourceLocation: sourceLocation)
-        #expect(input.date == fetched.date, sourceLocation: sourceLocation)
-        #expect(input.note == fetched.note, sourceLocation: sourceLocation)
-    }
-}
-
-private extension Date {
-    func adding(days: Int) -> Date {
-        Calendar(identifier: .gregorian).date(byAdding: .day, value: days, to: self)!
-    }
-    
-    func adding(seconds: TimeInterval) -> Date {
-        self + seconds
-    }
 }
