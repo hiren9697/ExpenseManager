@@ -11,12 +11,14 @@ import Foundation
 
 extension SaveExpenseViewModelTests {
     @MainActor
-    func makeSUT(completion: @escaping SaveExpenseViewModel.Completion = {},
+    func makeSUT(currentDate: Date = .now,
+                 completion: @escaping SaveExpenseViewModel.Completion = {},
                  sourceLocation: SourceLocation = #_sourceLocation,
                  action: (SaveExpenseViewModel, Spy) async -> Void) async {
         await withMemoryLeakTracking(sourceLocation: sourceLocation, testBody: { tracker in
             let spy = Spy()
             let sut = SaveExpenseViewModel(saveExpense: spy.save,
+                                           currentDate: currentDate,
                                            completion: completion)   
             await tracker(spy, sut)
             

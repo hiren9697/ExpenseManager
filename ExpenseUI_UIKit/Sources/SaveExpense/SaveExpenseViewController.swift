@@ -6,10 +6,21 @@
 //
 
 import UIKit
+import ExpensePresentation
 
-class SaveExpenseViewController: UIViewController {
+public class SaveExpenseViewController: UIViewController {
+    let viewModel: SaveExpenseViewModel
     
-    override func viewDidLoad() {
+    init(viewModel: SaveExpenseViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    public override func viewDidLoad() {
         super.viewDidLoad()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 }

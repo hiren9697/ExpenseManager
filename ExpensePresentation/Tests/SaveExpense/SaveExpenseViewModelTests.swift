@@ -14,34 +14,64 @@ import ExpenseFeature
 @MainActor
 final class SaveExpenseViewModelTests {
     @Test
-    func save_requestsToSaveExpenseWithCorrectInputs_onValidInputs() async throws {
+    func init_setsDateToCurrentDateFromGenerator() async throws {
+        let fixedDate = Date(timeIntervalSince1970: 12345)
+        await makeSUT(currentDate: fixedDate, action: { sut, spy in
+            #expect(sut.date == fixedDate)
+        })
+    }
+    
+    @Test
+    func save_deliversErrorOnInvalidInputs_andDoesNotRequestSave() async throws {
         // Arrange
         await makeSUT(action: { sut, spy in
-            let draft1 = DraftExpense(amount: 100.0, date: Date(timeIntervalSince1970: 100), note: "Dinner")
-            let draft2 = DraftExpense(amount: 50.0, date: Date(timeIntervalSince1970: 200), note: nil)
+            // Act: Empty input
+            await sut.save()
+            
+            // Assert
+            #expect(sut.errorMessage == SaveExpenseViewModel.invalidInputMessage)
+            #expect(spy.messages.isEmpty)
+            
+            // Act: Invalid text input
+            sut.simulateAmountInput("invalid")
+            await sut.save()
+            
+            // Assert
+            #expect(sut.errorMessage == SaveExpenseViewModel.invalidInputMessage)
+            #expect(spy.messages.isEmpty)
+            
+            // Act: Negative input
+            sut.simulateAmountInput("-50")
+            await sut.save()
+            
+            // Assert
+            #expect(sut.errorMessage == SaveExpenseViewModel.invalidInputMessage)
+            #expect(spy.messages.isEmpty)
+        })
+    }
+    
+    @Test
+    func save_requestsToSaveExpenseWithCorrectMappedInputs() async throws {
+        // Arrange
+        let currentDateToSubmit = Date(timeIntervalSince1970: 500)
+        let amountNumberToSubmit = 250.50
+        let amountTextToSubmit = " 250.50 "
+        let notesToSubmit = " Launch "
+        let expectedDraft = DraftExpense(amount: amountNumberToSubmit, date: currentDateToSubmit, note: notesToSubmit.trimmingCharacters(in: .whitespaces))
+        
+        await makeSUT(currentDate: currentDateToSubmit, action: { sut, spy in
+            sut.simulateAmountInput(amountTextToSubmit)
+            sut.simulateNoteInput(notesToSubmit)
             
             // Act
             Task {
-                await sut.save(draft: draft1)
+                await sut.save()
             }
             await waitForSaveRequestToFire()
             await spy.completeSaveSuccessfullyAndWaitUntilConsumed(at: 0)
             
             // Assert
-            #expect(spy.messages == [.save(draft1)])
-            
-            // Act
-            Task {
-                await sut.save(draft: draft2)
-            }
-            await waitForSaveRequestToFire()
-            await spy.completeSaveSuccessfullyAndWaitUntilConsumed(at: 1)
-            
-            // Assert
-            #expect(spy.messages == [
-                .save(draft1),
-                .save(draft2)
-            ])
+            #expect(spy.messages == [.save(expectedDraft)])
         })
     }
     
@@ -49,11 +79,11 @@ final class SaveExpenseViewModelTests {
     func isLoadingstate_isEnabled_whileSaving() async throws {
         // Arrange
         await makeSUT(action: { sut, spy in
-            let draft = DraftExpense(amount: 100.0, date: Date(timeIntervalSince1970: 100), note: "Dinner")
+            sut.simulateValidInputs()
             
             // Act
             Task {
-                await sut.save(draft: draft)
+                await sut.save()
             }
             await waitForSaveRequestToFire()
             
@@ -72,14 +102,14 @@ final class SaveExpenseViewModelTests {
     func save_setsErrorState_onSaveError() async throws {
         // Arrange
         await makeSUT(action: { sut, spy in
-            let draft = DraftExpense(amount: 100.0, date: Date(timeIntervalSince1970: 100), note: "Dinner")
+            sut.simulateValidInputs()
             
             // Assert
             #expect(sut.errorMessage == nil)
             
             // Act
             Task {
-                await sut.save(draft: draft)
+                await sut.save()
             }
             await waitForSaveRequestToFire()
             await spy.completeSaveWithErrorAndWaitUntilConsumed(anyNSError(), at: 0)
@@ -89,7 +119,7 @@ final class SaveExpenseViewModelTests {
             
             // Act
             Task {
-                await sut.save(draft: draft)
+                await sut.save()
             }
             await waitForSaveRequestToFire()
             
@@ -113,11 +143,11 @@ final class SaveExpenseViewModelTests {
         }
         
         await makeSUT(completion: completion, action: { sut, spy in
-            let draft = DraftExpense(amount: 100.0, date: Date(timeIntervalSince1970: 100), note: "Dinner")
+            sut.simulateValidInputs()
             
             // Act
             Task {
-                await sut.save(draft: draft)
+                await sut.save()
             }
             await waitForSaveRequestToFire()
             await spy.completeSaveSuccessfullyAndWaitUntilConsumed(at: 0)
@@ -125,5 +155,26 @@ final class SaveExpenseViewModelTests {
             // Assert
             #expect(completedCount == 1)
         })
+    }
+}
+
+// MARK: - DSL Helpers
+extension SaveExpenseViewModel {
+    func simulateAmountInput(_ amount: String) {
+        self.amountText = amount
+    }
+    
+    func simulateDateInput(_ date: Date) {
+        self.date = date
+    }
+    
+    func simulateNoteInput(_ note: String) {
+        self.note = note
+    }
+    
+    func simulateValidInputs(amount: String = "100.0", date: Date = Date(timeIntervalSince1970: 100), note: String = "Dinner") {
+        self.amountText = amount
+        self.date = date
+        self.note = note
     }
 }
