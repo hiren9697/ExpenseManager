@@ -14,12 +14,13 @@ import ExpenseFeature
 public class SaveExpenseViewModel {
     public typealias Completion = () -> Void
     private let saveExpense: SaveExpense
-    var errorMessage: String?
-    var isLoading: Bool = false
-    var amountText: String = ""
-    var date: Date
-    var note: String = ""
-    var completion: Completion
+    public var errorMessage: String?
+    public var isLoading: Bool = false
+    public var amountText: String = ""
+    public var date: Date
+    public var note: String = ""
+    private var completion: Completion
+    nonisolated(unsafe) private var saveTask: Task<Void, Never>?
     
     public init(saveExpense: @escaping SaveExpense, currentDate: Date = .now, completion: @escaping Completion) {
         self.saveExpense = saveExpense
@@ -28,6 +29,10 @@ public class SaveExpenseViewModel {
     }
     public static let saveErrorMessage = "Failed to save expense. Please try again."
     public static let invalidInputMessage = "Please enter a valid amount greater than zero."
+    
+    nonisolated public func cancel() {
+        saveTask?.cancel()
+    }
     
     public func save() async {
         let trimmedAmountText = amountText.trimmingCharacters(in: .whitespaces)
@@ -46,11 +51,19 @@ public class SaveExpenseViewModel {
         let finalNote = trimmedNote.isEmpty ? nil : trimmedNote
         let draft = DraftExpense(amount: amount, date: date, note: finalNote)
         
-        do {
-            try await saveExpense(draft)
-            completion() 
-        } catch {
-            errorMessage = Self.saveErrorMessage
+        
+        saveTask = Task {
+            do {
+                try await saveExpense(draft)
+                if !Task.isCancelled {
+                    completion()
+                }
+            } catch {
+                if !Task.isCancelled {
+                    errorMessage = Self.saveErrorMessage
+                }
+            }
         }
+        await saveTask?.value
     }
 }
