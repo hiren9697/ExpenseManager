@@ -64,10 +64,9 @@ final class SaveExpenseViewModelTests {
             sut.simulateNoteInput(notesToSubmit)
             
             // Act
-            Task {
+            Task.immediate {
                 await sut.save()
             }
-            await waitForSaveRequestToFire()
             await spy.completeSaveSuccessfullyAndWaitUntilConsumed(at: 0)
             
             // Assert
@@ -82,10 +81,9 @@ final class SaveExpenseViewModelTests {
             sut.simulateValidInputs()
             
             // Act
-            Task {
+            Task.immediate {
                 await sut.save()
             }
-            await waitForSaveRequestToFire()
             
             // Assert
             #expect(sut.isLoading)
@@ -108,20 +106,18 @@ final class SaveExpenseViewModelTests {
             #expect(sut.errorMessage == nil)
             
             // Act
-            Task {
+            Task.immediate {
                 await sut.save()
             }
-            await waitForSaveRequestToFire()
             await spy.completeSaveWithErrorAndWaitUntilConsumed(anyNSError(), at: 0)
             
             // Assert
             #expect(sut.errorMessage == SaveExpenseViewModel.saveErrorMessage)
             
             // Act
-            Task {
+            Task.immediate {
                 await sut.save()
             }
-            await waitForSaveRequestToFire()
             
             // Assert
             #expect(sut.errorMessage == nil)
@@ -146,10 +142,9 @@ final class SaveExpenseViewModelTests {
             sut.simulateValidInputs()
             
             // Act
-            Task {
+            Task.immediate {
                 await sut.save()
             }
-            await waitForSaveRequestToFire()
             await spy.completeSaveSuccessfullyAndWaitUntilConsumed(at: 0)
             
             // Assert
@@ -178,3 +173,82 @@ extension SaveExpenseViewModel {
         self.note = note
     }
 }
+
+
+/*
+ ### 🧠 The Requirement (spec reference: Capturing Task Handles)
+
+ You want to see exactly how the `taskHandler(task)` mechanism is implemented in the Essential Feed Case Study, what it does under the hood, and why it is written that way.
+
+ ### 🏗️ Recommended Design (The Closure Injection Pattern)
+
+ In the Essential Feed Case Study, `taskHandler` is **not a standalone function**. It is a **closure parameter** (a block of code passed as an argument) injected into a test helper method.
+
+ When testing native `async` code, you often have repetitive setup: spawning the task, waiting for the result, and catching errors. The Essential Feed authors moved all this boilerplate into a helper method called `resultFor`.
+
+ However, they faced a problem: **How do you test task cancellation if the helper method hides the `Task` from the actual test?**
+
+ Their elite solution: The helper method accepts an optional `taskHandler` closure. Right after the helper spawns the `Task`, it passes the `Task` handle into the closure. This acts as an "escape hatch," allowing specific tests (like the cancellation test) to grab the remote control for the task, while other tests can just ignore it.
+
+ ### 💻 Concrete Example
+
+ Here is the exact code from `URLSessionHTTPClientTests.swift` showing the helper method and the test that uses it.
+
+ #### 1. The Helper Method (The Provider)
+
+ Notice how `taskHandler` defaults to an empty closure `{ _ in }`. Most tests don't care about the task handle, so they do nothing.
+
+ ```swift
+ // From EssentialFeedTests/Shared API Infra/URLSessionHTTPClientTests.swift
+
+ private func resultFor(
+     _ values: (data: Data?, response: URLResponse?, error: Error?)?, 
+     taskHandler: (Task<(Data, HTTPURLResponse), Error>) -> Void = { _ in } // 👈 The Closure
+ ) async throws -> (Data, HTTPURLResponse) {
+     
+     // 1. Setup the network stub
+     values.map { URLProtocolStub.stub(data: $0, response: $1, error: $2) }
+     let sut = makeSUT()
+     
+     // 2. Spawn the task
+     let task = Task {
+         return try await sut.get(from: anyURL())
+     }
+     
+     // 3. 🛑 THE ESCAPE HATCH 🛑
+     // Pass the task handle back to the test that called this helper
+     taskHandler(task)
+     
+     // 4. Await the final result
+     return try await task.value
+ }
+
+ ```
+
+ #### 2. The Test (The Consumer)
+
+ Here is the test that ensures network requests can be cancelled. It uses the `taskHandler` to steal the `Task` handle out of the helper method so it can cancel it while the network request is loading.
+
+ ```swift
+ func test_cancelGetFromURLTask_cancelsURLRequest() async {
+     // 1. Create a variable to hold the stolen task handle
+     var task: Task<(Data, HTTPURLResponse), Error>?
+     
+     // 2. Tell the network stub: "As soon as you start loading, cancel the task"
+     URLProtocolStub.onStartLoading { task?.cancel() }
+     
+     // 3. Call the helper, and pass a closure to grab the task!
+     // $0 represents the `task` passed out from the helper method above.
+     let receivedError = await resultErrorFor(taskHandler: { task = $0 }) as NSError?
+     
+     // 4. Assert that the error returned was a cancellation error
+     XCTAssertEqual(receivedError?.code, URLError.cancelled.rawValue)
+ }
+
+ ```
+
+ *(Note: `resultErrorFor` is just a tiny wrapper around `resultFor` that returns the `Error` instead of the `Data`)*.
+
+ **Why this is a World-Class Pattern:**
+ It perfectly balances **DRY (Don't Repeat Yourself)** with **Flexibility**. By injecting a closure, 90% of their tests are incredibly short because the helper handles the `Task` boilerplate. But for the 10% of tests that need surgical precision (like triggering `.cancel()`), the helper effortlessly hands over the controls.
+ */

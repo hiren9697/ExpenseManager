@@ -26,10 +26,6 @@ extension SaveExpenseViewModelTests {
         })
     }
     
-    func waitForSaveRequestToFire() async {
-        await Task.yield()
-    }
-    
     func anyNSError() -> NSError {
         return NSError(domain: "any error", code: 0)
     }
