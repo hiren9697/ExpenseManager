@@ -92,4 +92,11 @@ fastlane/test_output
 !*.xcworkspace/contents.xcworkspacedata
 /*.gcno
 
+# Third-party reference material (not to be redistributed)
+docs/reference/
+
+# Personal Antigravity agent config (optional — remove if you want it tracked)
+.agents/rules/
+
+
 # End of https://www.gitignore.io/api/swift,xcode
