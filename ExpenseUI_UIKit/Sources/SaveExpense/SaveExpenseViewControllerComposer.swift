@@ -15,7 +15,6 @@ public class SaveExpenseViewControllerComposer {
                                currentDateGeneragor: @escaping () -> Date, 
                                completion: @escaping () -> Void) -> SaveExpenseViewController {
         return SaveExpenseViewController(viewModel: SaveExpenseViewModel(saveExpense: saveExpense,
-                                                                         currentDateGenerator: currentDateGeneragor,
                                                                          completion: completion))
     }
 }
